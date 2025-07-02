@@ -1,3 +1,31 @@
+# Archivos de IDE
 .classpath
-target/
 .factorypath
+.vscode/
+.idea/
+*.iml
+
+# Archivos de compilación
+target/
+*.class
+*.jar
+*.war
+
+# Logs
+*.log
+logs/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# SECRETS - NUNCA SUBIR ESTOS ARCHIVOS
+.env
+.env.local
+.env.production
+application-local.properties
+application-secrets.properties
+
+# Archivos temporales
+*.tmp
+*.temp
