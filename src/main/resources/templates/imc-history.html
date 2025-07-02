@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial IMC - Monitor IMC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #c8d0e9 0%, #e8eaf6 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+        .card-header {
+            background: #c8d0e9;
+            color: #333;
+            border-bottom: 1px solid #b0bdd6;
+        }
+        .btn-primary {
+            background: #c8d0e9;
+            border: 1px solid #b0bdd6;
+            color: #333;
+        }
+        .btn-primary:hover {
+            background: #b0bdd6;
+            border: 1px solid #9aa8c7;
+            color: #333;
+        }
+        .navbar-custom {
+            background: rgba(200, 208, 233, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #b0bdd6;
+        }
+        .navbar-brand, .nav-link {
+            color: #333 !important;
+        }
+        .nav-link:hover {
+            color: #495057 !important;
+        }
+        .imc-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        .table-custom {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+        }
+        .table-primary {
+            background: #c8d0e9;
+            color: #333;
+        }
+        .stats-card {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+        .alert-success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .text-primary {
+            color: #495057 !important;
+        }
+        /* Badges IMC con colores mate suaves */
+        .bg-info-custom {
+            background-color: #7fb3d3 !important;
+            color: white !important;
+        }
+        .bg-success-custom {
+            background-color: #7db383 !important;
+            color: white !important;
+        }
+        .bg-warning-custom {
+            background-color: #d4b372 !important;
+            color: white !important;
+        }
+        .bg-danger-custom {
+            background-color: #c87c7c !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-heartbeat"></i> Monitor IMC
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/imc/form}">
+                    <i class="fas fa-calculator"></i> Nueva Medición
+                </a>
+                <a class="nav-link" th:href="@{/imc/logout}">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Estadísticas del usuario -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h4><i class="fas fa-chart-line"></i> Historial de <span th:text="${usuario.fullName}"></span></h4>
+                        <div class="row mt-3" th:if="${!records.empty}">
+                            <div class="col-md-3">
+                                <strong>Última Medición:</strong><br>
+                                <span th:text="${#temporals.format(records[0].measuredAt, 'dd/MM/yyyy')}"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Último IMC:</strong><br>
+                                <span th:text="${#numbers.formatDecimal(records[0].imc, 1, 2)}"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Último Peso:</strong><br>
+                                <span th:text="${records[0].weight}"></span> kg
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Total Registros:</strong><br>
+                                <span th:text="${records.size()}"></span>
+                            </div>
+                        </div>
+                        <div th:if="${records.empty}" class="mt-3">
+                            <p class="mb-0">Aún no tienes registros. ¡Realiza tu primera medición!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensajes -->
+        <div th:if="${success}" class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+        </div>
+
+        <!-- Tabla de historial -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history"></i> Historial de Mediciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${records.empty}" class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay registros aún</h5>
+                    <p class="text-muted">Comienza realizando tu primera medición de IMC</p>
+                    <a th:href="@{/imc/form}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Medición
+                    </a>
+                </div>
+
+                <div th:if="${!records.empty}" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Peso (kg)</th>
+                                <th scope="col">Estatura (m)</th>
+                                <th scope="col">IMC</th>
+                                <th scope="col">Categoría</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="record, iterStat : ${records}">
+                                <th scope="row" th:text="${iterStat.count}"></th>
+                                <td th:text="${#temporals.format(record.measuredAt, 'dd/MM/yyyy')}"></td>
+                                <td>
+                                    <span class="fw-bold" th:text="${record.weight}"></span>
+                                </td>
+                                <td th:text="${record.height}"></td>
+                                <td>
+                                    <span class="fw-bold text-primary" th:text="${#numbers.formatDecimal(record.imc, 1, 2)}"></span>
+                                </td>
+                                <td>
+                                    <span class="badge imc-badge"
+                                          th:classappend="${record.imc < 18.5 ? 'bg-info-custom' : (record.imc < 25 ? 'bg-success-custom' : (record.imc < 30 ? 'bg-warning-custom' : 'bg-danger-custom'))}"
+                                          th:text="${record.imc < 18.5 ? 'Bajo peso' : (record.imc < 25 ? 'Normal' : (record.imc < 30 ? 'Sobrepeso' : 'Obesidad'))}">
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón para nueva medición -->
+        <div class="text-center mt-4" th:if="${!records.empty}">
+            <a th:href="@{/imc/form}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Nueva Medición
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer informativo -->
+    <footer class="mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title text-center">Información sobre el IMC</h6>
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <span class="badge bg-info-custom imc-badge">Bajo peso</span>
+                                    <br><small>&lt; 18.5</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <span class="badge bg-success-custom imc-badge">Peso normal</span>
+                                    <br><small>18.5 - 24.9</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <span class="badge bg-warning-custom imc-badge">Sobrepeso</span>
+                                    <br><small>25.0 - 29.9</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <span class="badge bg-danger-custom imc-badge">Obesidad</span>
+                                    <br><small>≥ 30.0</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+</body>
+</html>
